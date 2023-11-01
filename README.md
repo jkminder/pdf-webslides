@@ -1,11 +1,17 @@
-# PDF Web Slides 
-[![Build Status](https://travis-ci.com/misc0110/pdf-webslides.svg?branch=master)](https://travis-ci.com/misc0110/pdf-webslides)
+# PDF Web Slides Visualizer
+This tool allows converting PDF presentation slides to a self-contained HTML5 file and is a modification of the original PDF Web Slides Tool. It is intended for the online visualisation of PDF slides for presentation viewers (instead of a presentator).
 
 
-This tool allows converting PDF presentation slides to a self-contained HTML5 file. The resulting HTML5 file also contains a presentation mode which mimics the functionality of [pdfpc](https://github.com/pdfpc/pdfpc). 
+
+By pressing `g`+slidenumber you can directly go to a desired slide. By pressing `tab`, you can open the full slide overview. With `p` you can activate a pointer.
 
 ![PDF Web Slides in presentation mode](screenshot.png)
-*Presentation mode (left) with a preview of the next slides and a timer which either counts up or down, and the presentation view (right)*
+*Standart PDF visualization (left) with an overview of the next slides, and the full overview view (right)*
+
+Differences to the [PDF Web Slides Tool](https://github.com/misc0110/pdf-webslides):
+-   Shows a scrollable overview of the slides to the right of the current slide.
+-   Has higher quality thumbnails
+-   Removes the presentator mode and limits users to a single view.
 
 # Usage
 
@@ -14,21 +20,6 @@ The first step is to convert a PDF to an HTML5 file. This is simply done by runn
     pdf-webslides <pdf file>
     
 The output is an `index.html` file and a corresponding `slides.js` in the current directory. Note that it is also possible to generate a standalone `index.html` using the `-s` option. If the HTML file is opened, it shows the slides in the same way as the original PDF. Slides can simply be navigated using left/right arrow keys, page-up/page-down keys, as well as by swiping over the slides. 
-
-## Presenter Mode
-
-Presenter mode is a mode where the audience sees the slides, while the presenter sees the current and next slide, a timer, and speaker notes. 
-The presenter mode of PDF Web Slides mimics the presenter mode of [pdfpc](https://github.com/pdfpc/pdfpc). 
-
-### Starting Presenter Mode
-
-To start the slides in presenter mode, there are two possibilities. 
-First, the presenter mode can be set as the default mode at conversion time by providing the `-p` option, i.e., 
-
-    pdf-webslides -p <pdf file>
-    
-However, even if the presenter mode was not set as the default mode, it can be activated by pressing the `P` key. 
-Alternatively, appending `?presenter=1` to the URL opens the slides in presenter mode. 
 
 
 ### Keyboard Shortcuts
@@ -40,25 +31,8 @@ Alternatively, appending `?presenter=1` to the URL opens the slides in presenter
 | Home | Go to first slide |
 | End | Go to last slide |
 | g   | Input slide number to go to |
-| +   | Increase note size |
-| -   | Decrease note size |
-| b   | Turn on/off presentation view, i.e., display an entirely black screen |
-| f   | Freeze/unfreeze presentation view. Any change in the presenter mode is not shown on the presentation view |
-| r   | Reset timer |
 | p   | Display/hide a pointer (i.e., a virtual laser pointer) |
-
-### Notes
-
-The tool supports the same type of notes as pdfpc. Hence, they can also be directly embedded in LaTeX beamer.
-With the following macro
-
-    \newcommand<>{\pnote}[1]{\only#2{\tikz[remember picture,overlay]{\node{\pdfmargincomment[opacity=0]{#1}}}}}
-
-notes can be added to a certain animation-step of a slide by adding something like 
-
-    \pnote<1>{Speaker note for step 1 of the current slide.}
-    
-If there are notes in the PDF, they are shown below the preview of the next slide. 
+| Tab   | Display the full slide overview. |
 
 ### Videos
 
@@ -116,4 +90,3 @@ Then, the tool can be built by running
 
     make -f Makefile.win
 	
-

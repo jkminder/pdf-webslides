@@ -15,9 +15,8 @@ img#slide {
 video#video {
     float: left;
 }
-img#slide-next {
+#side-overview {
     float: right;
-    background-color: white;
 }
 #slide-annot {
     color: white;
@@ -32,12 +31,6 @@ img#slide-next {
     position: absolute;
     bottom: 4px;
 }
-div#timer {
-    font-size: 3em;
-    cursor: hand;
-    font-family: "Lucida Console", Monaco, monospace;
-    text-align: center;
-}
 div#footer {
     position: absolute;
     bottom: 4px; 
@@ -47,7 +40,7 @@ div#footer {
 #pages {
     color: white;
     position: absolute;
-    right: 4px;
+    left: 4px;
     bottom: 4px;
     font-size: 1.5em;
     font-family: "Lucida Console", Monaco, monospace;
@@ -55,12 +48,7 @@ div#footer {
 #slides-open {
     font-size: 200%;
 }
-#open-btn {
-    display: none;
-    align-items: center; 
-    padding: 0.5em;
-    margin: 2em;
-}
+
 #pointer {
     position: absolute;
     color: #ff4000;
@@ -70,14 +58,11 @@ div#footer {
 </head>
 <body onload="init()"><div id="overview" style="display: none;"></div>
 <div id="presenterconsole"><img id="slide" height="100%"/>
-<img id="slide-next" style="display: none;"/><span id="slide-annot" style="display: none;"></span>
-<button onclick="openSlides()" id="open-btn" >
-<img src="data:image/svg+xml;base64,{{open.svg}}"/> <span id="slides-open">&nbsp; Open Slides</span>
-</button>
+<div id="side-overview" style="display: none;"></div><span id="slide-annot" style="display: none;"></span>
+
 <div id="footer">
 <div id="icons"><span style="display: none;" id="freeze"><img src="data:image/svg+xml;base64,{{freeze.svg}}" /></span><span style="display: none;" id="black"><img src="data:image/svg+xml;base64,{{black.svg}}" /></span></div>
 
-<div style="display: none;" id="timer" onclick="setTimer()" oncontextmenu="switchTimerFormat(); return false;">00:00:00</div>
 <div style="display: none;" id="pages">0/0</div>
 </div>
 <div id="pointer" style="display: none;">&#11044;</div>
@@ -86,12 +71,10 @@ div#footer {
 <script>
     var slide = 0;
     var x = 0;
-    var presenter = false;
+    var presenter = true; // presenter mode always on
     var slides = null;
     var freeze = false;
     var duration = 0;
-    var start_time = 0;
-    var timer_running = false;
     var black = false;
     var show_hours = true;
     var pointer = false;
@@ -196,14 +179,17 @@ div#footer {
     
         
         if(presenter) {
-            if(slide_img[slide + 1] != 0) {
-                document.getElementById("slide-next").src = "data:image/svg+xml;base64," + slide_img[slide + 1];
-            } else {
-                document.getElementById("slide-next").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
-            }
             document.getElementById("slide-annot").innerHTML = atob(slide_annot[slide]);
             document.getElementById("pages").innerHTML = (slide + 1) + "/" + (slide_img.length - 1);
-            
+            sideoverview = document.getElementById("side-overview");
+
+            // scroll the side overview to the current slide
+            if(sideoverview) {
+                var sideslide = document.getElementById("sideslide" + slide);
+                if(sideslide) {
+                    sideslide.scrollIntoView();
+                }
+            }
             if(slides && !freeze) {
                 try {
                     slides.goto(slide);
@@ -212,69 +198,11 @@ div#footer {
                 }
             }
             
-            presentationTimer();
         }
     }
     
-    function setTimer() {
-        var new_duration = parseInt(window.prompt("Presentation duration (in minutes)", Math.floor(duration / 60 / 1000))) * 60 * 1000;
-        if(!isNaN(new_duration)) duration = new_duration;
-    }
-    
-    function switchTimerFormat() {
-        show_hours = !show_hours;
-        timer_running = true;
-        redraw();
-    }
-    
-    function formatTime(ms) {
-        var neg = false;
-        if(ms < 0) {
-            neg = true;
-            ms = -ms;
-        }
-        ms /= 1000;
-        var sec = Math.floor(ms % 60).toString();
-        if(sec.length == 1) sec = "0" + sec;
-        var min = Math.floor(ms / 60);
-        if(show_hours) {
-            var hour = Math.floor(min / 60).toString();
-            min = (min % 60).toString();
-            if(min.length == 1) min = "0" + min;
-            if(hour.length == 1) hour = "0" + hour;
-            return (neg ? "-" : "") + hour + ":" + min + ":" + sec;
-        } else {
-            min = min.toString();
-            if(min.length == 1) min = "0" + min;
-            return (neg ? "-" : "") + min + ":" + sec;
-        }
-    }
-    
-    function colorTime(ms) {
-        if(ms < 0) return "#ff0000";
-        if(duration == 0) return "#ffffff";
-        ms /= 1000;
-        var time_per_slide = (duration / 1000) / (slide_img.length - 1);
-        var target_time = slide * time_per_slide;
-//         console.log(ms + " -> " + target_time);
-        if(ms + 60 < target_time) return "#8080ff";
-        if(ms > target_time + 60) return "#ff8000";
-        return "#ffffff";
-    }
-    
-    function presentationTimer() {
-        var running = Date.now() - start_time;
-        if(!timer_running) {
-            running = 0;
-        }
-        var tdisp = document.getElementById("timer");
-        if(duration != 0) {
-            tdisp.innerHTML = formatTime(duration - running);
-            tdisp.style.color = colorTime(running);
-        } else {
-            tdisp.innerHTML = formatTime(running);
-        }
-    }
+
+  
 
     function unify(e) {
         e = e || window.event;
@@ -318,48 +246,6 @@ div#footer {
         p.style.top = y * parseInt(style.height);
     }
 
-    function openSlides() {
-        var slide_url = document.location.href.replace(/\?presenter/g, "?presentslides");
-        if(presenter && slide_url.indexOf("presentslides") == -1) slide_url += "?presentslides";
-        slides = window.open(slide_url);
-        try {
-            slides.goto(slide);
-        } catch(e) {
-            window.setTimeout(function() {
-                slides.postMessage({"action": "goto", "data": slide}, "*");
-            }, 100);
-        }
-    }
-    
-    
-    function receiveMessage(event) {
-        if(event.data.action === undefined) return;
-        
-        if(!presenter) {
-            if(event.data.action == "goto") {
-                goto(event.data.data);
-            }
-            else if(event.data.action == "black") {
-                black = event.data.data;
-                redraw();
-            }
-            else if(event.data.action == "pointer") {
-                showPointer(event.data.data.x, event.data.data.y);
-            }
-            else if(event.data.action == "showPointer") {
-                pointer = event.data.data;
-                document.getElementById("pointer").style.display = pointer ? "" : "none";
-            }
-        } else {
-            if(event.data.action == "close") {
-                document.getElementById("open-btn").style.display = "inline-flex";
-            }
-            else if(event.data.action == "opened") {
-                document.getElementById("open-btn").style.display = "none";
-            }
-        }
-//         console.log(event);
-    }
 
     function done() {
         window.opener.postMessage({"action": "close", "data": null}, "*");
@@ -391,22 +277,44 @@ div#footer {
         ov.innerHTML = table;
     }
     
+    function renderSideOverview() {
+        var ov = document.getElementById("side-overview");
+        ov.style.display = "block";
+        ov.style.width = "30%";
+    
+        ov.style.height = "100%";
+        ov.style.overflow = "scroll";
+        var table = "<table style=\"width: 100%;\">";
+        var per_row = 1;
+        var width = 100;
+        for(var row = 0; row < Math.ceil((slide_img.length - 1) / per_row); row++) {
+            table += "<tr>";
+            for(var col = 0; col < per_row; col++) {
+                var idx = row * per_row + col;
+                if(idx < slide_img.length - 1) {
+                    table += "<td id='sideslide"+idx + "'><img onclick=\"goto(" + idx + ")\" style=\"width: " + width + "%;\" src=\"data:image/png;base64," + slide_thumb[idx] + "\"></td>";
+                } else {
+                    table += "<td></td>";
+                }
+            }
+            table += "</tr>";
+        }
+        
+        table += "</table>";
+        ov.innerHTML = table;
+    }
+
     function setLayout() {
         if(document.location.href.indexOf("?presenter") != -1 || presenter) {
             presenter = true;
+            renderSideOverview();
             document.getElementById("slide").style.width="70%";
             document.getElementById("slide").style.backgroundColor="white";
             document.getElementById("slide").style.height="auto";
-            document.getElementById("slide-next").style.width="30%";
-            document.getElementById("slide-next").style.backgroundColor="white";
-            document.getElementById("open-btn").style.display = "inline-flex";
-            document.getElementById("slide-next").style.display = "block";
+            document.getElementById("side-overview").style.width="30%";
             document.getElementById("slide-annot").style.display = "";
-            document.getElementById("timer").style.display = "";
             document.getElementById("pages").style.display = "";
             document.getElementById("pages").innerHTML = "1/" + (slide_img.length - 1);
-            window.setInterval(presentationTimer, 200);
-//             openSlides();
         } else {
             try {
                 if(window.opener) window.opener.postMessage({"action": "opened", "data": null}, "*");
@@ -417,7 +325,7 @@ div#footer {
     
     function init() {
         var font_size = 200;
-        presenter = {{presenter}} && (document.location.href.indexOf("?presentslides") == -1);
+        presenter = true; // presenter mode always on
     
         setLayout();
         
@@ -439,10 +347,6 @@ div#footer {
                 prev();
             } else if(e.keyCode == 39 || e.keyCode === 34 /*|| e.keyCode === 40*/) {
                 e.preventDefault();
-                if(!timer_running) {
-                    timer_running = true;
-                    start_time = Date.now();
-                }
                 next();
             } else if(e.keyCode == 36) {
                 goto(0);
@@ -454,24 +358,7 @@ div#footer {
             } else if(e.key == "-") {
                 font_size -= 10;
                 document.getElementById("slide-annot").style.fontSize = font_size + "%";
-            } else if(e.key == "f") {
-                freeze = !freeze;
-                if(presenter) document.getElementById("freeze").style.display = freeze ? "" : "none";
-                redraw();
             } else if(e.key == "r") {
-                start_time = Date.now();
-                redraw();
-                timer_running = false;
-            } else if(e.key == "b") {
-                black = !black;
-                if(presenter) document.getElementById("black").style.display = black ? "" : "none";
-                if(presenter && slides) {
-                    try {
-                        slides.black = black;
-                    } catch(e) {
-                        slides.postMessage({"action": "black", "data": black}, "*");
-                    }
-                }
                 redraw();
             } else if(e.key == "g") {
                 var new_slide = parseInt(prompt("Go to slide", slide + 1));
@@ -506,7 +393,6 @@ div#footer {
             e.preventDefault()
         }, false);
 
-        /*if(!presenter)*/ window.addEventListener("message", receiveMessage, false);
        
         window.onunload = function(e) {
             done();

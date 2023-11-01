@@ -62,7 +62,7 @@ static getopt_arg_t cli_options[] = {
 
 // ---------------------------------------------------------------------------
 void create_thumbnail(PopplerPage* page, const char* fname, int width, int height) {
-    float scale = 72.0 * 4;
+    float scale = 72.0 * 1;
     cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 150 / scale * width, 150 / scale * height);
     cairo_t* cr = cairo_create(surface);
     cairo_scale(cr, 150.0 / scale, 150.0 / scale);
@@ -227,6 +227,7 @@ int main(int argc, char *argv[]) {
   }
 
   const char *input = argv[argc - 1];
+
   if (access(input, F_OK) == -1) {
     printf_color(1, TAG_FAIL "Could not open file '%s'\n", input);
     return 1;
@@ -264,7 +265,7 @@ int main(int argc, char *argv[]) {
 
   progress_start(1, (pages + 1) * 6 - 1, NULL);
 
-  char *template = strdup((char*)index_html_template); //read_file("index.html.template");
+  char *template = read_file("index.html.template"); // /strdup((char*)index_html_template); //
 
   char* img_black = encode_array_base64((char *)black_svg, black_svg_len);
   char* img_freeze = encode_array_base64((char *)freeze_svg, freeze_svg_len);
