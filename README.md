@@ -53,11 +53,7 @@ Then, the tool can be built by running
 
     make
     
-and 
-
-    make install
-    
-to install the tool as `pdf-webslides`. 
+This will generate a binary "pdf-webslides" that you can use to generate the html files. 
 
 ### Windows
 
