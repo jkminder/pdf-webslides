@@ -42,25 +42,6 @@ Note that videos are not embedded into the HTML file, they have to be in the sam
 
 # Installation
 
-## Pre-built Binaries (Linux and Windows)
-
-The folder `dist` contains pre-built versions of the tool. 
-For Linux, it contains a Debian package, for Windows a ZIP file containing the binary and the required DLLs. 
-
-## PPA (Linux)
-
-First, add the public key of the PPA and the PPA URL to the package manager, and update the package manager
-
-    curl -s "https://misc0110.github.io/ppa/KEY.gpg" | sudo apt-key add -
-    sudo curl -s -o /etc/apt/sources.list.d/misc0110.list "https://misc0110.github.io/ppa/file.list"
-    sudo apt update
-
-Then, simply install the tool
-
-    sudo apt install pdf-webslides
-
-## From Source
-
 ### Linux
 
 The tool depends on Poppler and Cairo for converting the PDF to SVGs. 
