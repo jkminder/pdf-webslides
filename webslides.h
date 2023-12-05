@@ -20,6 +20,7 @@ typedef struct {
   int nonotes;
   char* name;
   char* compress;
+  float thumbnail_scale;
 } Options;
 
 #endif

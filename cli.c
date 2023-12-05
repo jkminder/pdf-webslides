@@ -70,7 +70,7 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
   struct option *long_options =
       getopt_get_long_options((getopt_arg_t *)cli_options);
   int c, ret = 0;
-  while ((c = getopt_long(argc, argv, ":spo:nhvc:", long_options, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, ":spo:nhvc:t:", long_options, NULL)) != EOF) {
     switch (c) {
       case 's':
         options->single = 1;
@@ -94,6 +94,15 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
         break;
       case 'c':
         options->compress = strdup(optarg);
+        break;
+      case 't':
+        options->thumbnail_scale = atof(optarg);
+        if (options->thumbnail_scale < 0.1 ||
+            options->thumbnail_scale > 1.0) {
+          printf("Thumbnail scale must be between 0.1 and 1.0\n");
+          ret = 1;
+          break;
+        }
         break;
       case ':':
         printf("Option -%c requires an argument.\n", optopt);

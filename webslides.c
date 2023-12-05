@@ -58,14 +58,14 @@ static getopt_arg_t cli_options[] = {
     {"compress", required_argument, NULL, 'c', "Use an SVG compressor (e.g., svgcleaner)", "BINARY"},
     {"version", no_argument, NULL, 'v', "Show version", NULL},
     {"help", no_argument, NULL, 'h', "Show this help.", NULL},
+    {"thumbnail_scale", required_argument, NULL, 't', "Thumbnail scale, must be between 0.1 and 1.0 (default 0.6)", "SCALE"},
     {NULL, 0, NULL, 0, NULL, NULL}};
 
 // ---------------------------------------------------------------------------
-void create_thumbnail(PopplerPage* page, const char* fname, int width, int height) {
-    float scale = 72.0 * 1;
-    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 150 / scale * width, 150 / scale * height);
+void create_thumbnail(PopplerPage* page, const char* fname, int width, int height, float scale) {
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, scale * width, scale * height);
     cairo_t* cr = cairo_create(surface);
-    cairo_scale(cr, 150.0 / scale, 150.0 / scale);
+    cairo_scale(cr, scale, scale);
     cairo_save(cr);
     poppler_page_render(page, cr);
     cairo_restore(cr);
@@ -81,7 +81,7 @@ void create_thumbnail(PopplerPage* page, const char* fname, int width, int heigh
 }
 
 // ---------------------------------------------------------------------------
-int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
+int convert(PopplerPage *page, const char *fname, SlideInfo *info, Options *options) {
   cairo_surface_t *surface;
   cairo_t *img;
   double width, height;
@@ -156,7 +156,7 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
   poppler_page_free_link_mapping(link_list);
 
   cairo_show_page(img);
-  create_thumbnail(page, fname_prev, width, height);
+  create_thumbnail(page, fname_prev, width, height, options->thumbnail_scale);
   
   cairo_destroy(img);
   cairo_surface_destroy(surface);
@@ -177,7 +177,7 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
   sprintf(fname, "slide-%d.svg", p);
   sprintf(fname_p, "%s.prev.png", fname);
   page = poppler_document_get_page(pdffile, p);
-  convert(page, fname, &(info[p]));
+  convert(page, fname, &(info[p]), options);
   if (options->nonotes) {
     free(info[p].annotations);
     info[p].annotations = "";
@@ -213,7 +213,7 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
 
 // ---------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
-  Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL, .compress = NULL};
+  Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL, .compress = NULL, .thumbnail_scale = 0.5};
   PopplerDocument *pdffile;
   char abspath[PATH_MAX];
   char fname_uri[PATH_MAX + 32];
