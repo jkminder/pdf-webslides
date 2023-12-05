@@ -19,7 +19,7 @@ The first step is to convert a PDF to an HTML5 file. This is simply done by runn
 
     pdf-webslides <pdf file>
     
-The output is an `index.html` file and a corresponding `slides.js` in the current directory. Note that it is also possible to generate a standalone `index.html` using the `-s` option. If the HTML file is opened, it shows the slides in the same way as the original PDF. Slides can simply be navigated using left/right arrow keys, page-up/page-down keys, as well as by swiping over the slides. 
+The output is an `index.html` file and a corresponding `slides.js` in the current directory. Note that it is also possible to generate a standalone `index.html` using the `-s` option. If your HTLM file gets to large, consider varying the scale of resolution of the thumbnails (use `-t 0.2` and a float between 0.1 and 1.0, default is 0.6). If the HTML file is opened, it shows the slides in the same way as the original PDF. Slides can simply be navigated using left/right arrow keys, page-up/page-down keys, as well as by swiping over the slides. 
 
 
 ### Keyboard Shortcuts
