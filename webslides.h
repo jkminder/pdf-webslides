@@ -21,6 +21,8 @@ typedef struct {
   char* name;
   char* compress;
   float thumbnail_scale;
+  int png;
+  int slide_width;
 } Options;
 
 #endif

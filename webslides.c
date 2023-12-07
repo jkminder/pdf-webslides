@@ -24,7 +24,7 @@
 #undef LINUX
 #endif
 
-#if defined(WINDOWS)
+#if defined(WINDOWS)  
 #include <shlwapi.h>
 #include <windows.h>
 
@@ -52,13 +52,14 @@ void winsystem(const char* app, char* arg) {
 // ---------------------------------------------------------------------------
 static getopt_arg_t cli_options[] = {
     {"single", no_argument, NULL, 's', "Create a single file", NULL},
-    {"presenter", no_argument, NULL, 'p', "Start in presenter mode", NULL},
     {"output", required_argument, NULL, 'o', "Output file name", "FILENAME"},
     {"disablenotes", no_argument, NULL, 'n', "Do not include notes", NULL},
     {"compress", required_argument, NULL, 'c', "Use an SVG compressor (e.g., svgcleaner)", "BINARY"},
     {"version", no_argument, NULL, 'v', "Show version", NULL},
     {"help", no_argument, NULL, 'h', "Show this help.", NULL},
-    {"thumbnail_scale", required_argument, NULL, 't', "Thumbnail scale, must be between 0.1 and 1.0 (default 0.6)", "SCALE"},
+    {"thumbnail_scale", no_argument, NULL, 't', "Thumbnail scale, must be between 0.1 and 1.0 (default 0.3)", "SCALE"},
+    {"png", no_argument, NULL, 'p', "Use PNG instead of SVG", NULL},
+    {"slide_width", no_argument, NULL, 'w', "Slide width in pixels, only valid together with --png option (default 1920)", "WIDTH"},
     {NULL, 0, NULL, 0, NULL, NULL}};
 
 // ---------------------------------------------------------------------------
@@ -82,21 +83,45 @@ void create_thumbnail(PopplerPage* page, const char* fname, int width, int heigh
 
 // ---------------------------------------------------------------------------
 int convert(PopplerPage *page, const char *fname, SlideInfo *info, Options *options) {
-  cairo_surface_t *surface;
-  cairo_t *img;
   double width, height;
+  float thumb_scale = options->thumbnail_scale;
   char *comm = calloc(1024, 1);
   char fname_prev[256];
   snprintf(fname_prev, 256, "%s.prev.png", fname);
 
   poppler_page_get_size(page, &width, &height);
-  surface = cairo_svg_surface_create(fname, width, height);
-  img = cairo_create(surface);
+  
+  if (options->png) {
+    float scale = options->slide_width / width;
+    thumb_scale = scale * options->thumbnail_scale;
+    cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, scale * width, scale * height);
+    cairo_t* cr = cairo_create(surface);
+  
+    cairo_scale(cr, scale, scale);
+    cairo_save(cr);
+    poppler_page_render(page, cr);
+    cairo_restore(cr);
+    cairo_set_operator(cr, CAIRO_OPERATOR_DEST_OVER);
+    cairo_set_source_rgb(cr, 1, 1, 1);
+    cairo_paint(cr);
+
+    cairo_destroy(cr);
+    cairo_surface_write_to_png(surface, fname);
+
+    cairo_surface_destroy(surface);
+
+
+  } else {
+    cairo_surface_t *surface = cairo_svg_surface_create(fname, width, height);
+    cairo_t *img = cairo_create(surface);
+    poppler_page_render_for_printing(page, img);
+    cairo_show_page(img);
+    cairo_destroy(img);
+    cairo_surface_destroy(surface);
+  }
 
   info->videos_pos = strdup("");
   info->videos = strdup("");
-
-  poppler_page_render_for_printing(page, img);
 
   GList *annot_list = poppler_page_get_annot_mapping(page);
   GList *s;
@@ -145,7 +170,6 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info, Options *opti
     PopplerAction *a = m->action;
     if (a->type == POPPLER_ACTION_LAUNCH) {
       PopplerActionLaunch *launch = (PopplerActionLaunch *)a;
-      //         printf("\n\n%s\n", launch->file_name);
       char *movie_filename = strdup(launch->file_name);
       append_elem(&info->videos, movie_filename, "|");
       append_elem(&info->videos_pos, "0;0;1;1", "|");
@@ -155,11 +179,7 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info, Options *opti
   }
   poppler_page_free_link_mapping(link_list);
 
-  cairo_show_page(img);
-  create_thumbnail(page, fname_prev, width, height, options->thumbnail_scale);
-  
-  cairo_destroy(img);
-  cairo_surface_destroy(surface);
+  create_thumbnail(page, fname_prev, width, height, thumb_scale);
   return 0;
 }
 
@@ -174,7 +194,11 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
                    Options *options) {
   PopplerPage *page;
   char fname[64], fname_c[64], fname_p[128];
-  sprintf(fname, "slide-%d.svg", p);
+  if (options->png) {
+    sprintf(fname, "slide-%d.png", p);
+  } else {
+    sprintf(fname, "slide-%d.svg", p);
+  }
   sprintf(fname_p, "%s.prev.png", fname);
   page = poppler_document_get_page(pdffile, p);
   convert(page, fname, &(info[p]), options);
@@ -190,7 +214,7 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
     winsystem(options->compress, convert_cmd);
 #endif
 #if defined(LINUX)
-    sprintf(convert_cmd, "\"%s\" %s %s 2> /dev/null > /dev/null", options->compress, fname, fname_c);
+    sprintf(convert_cmd, "\"%s\" %s -o %s --multipass 2> /dev/null > /dev/null", options->compress, fname, fname_c);
     system(convert_cmd);
 #endif
   } else {
@@ -202,8 +226,10 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
 #else
   char *b64 = encode_file_base64(fname_c);
 #endif
+  
   info[p].slide = b64;
   info[p].thumb = encode_file_base64(fname_p);
+  
   unlink(fname);
   unlink(fname_p);
   if (options->compress) {
@@ -213,7 +239,7 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
 
 // ---------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
-  Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL, .compress = NULL, .thumbnail_scale = 0.5};
+  Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL, .compress = NULL, .thumbnail_scale = 0.3, .png = 0, .slide_width = 1920};
   PopplerDocument *pdffile;
   char abspath[PATH_MAX];
   char fname_uri[PATH_MAX + 32];
@@ -293,9 +319,9 @@ int main(int argc, char *argv[]) {
   info[pages].thumb = strdup("");
   info[pages].videos_pos = strdup("");
 
-  char *video_pos_data = encode_array(info, 4, pages + 1, 0, progress_cb);
-  char *thumb_data = encode_array(info, 3, pages + 1, 0, progress_cb);
   char *slide_data = encode_array(info, 2, pages + 1, 0, progress_cb);
+  char *thumb_data = encode_array(info, 3, pages + 1, 0, progress_cb);
+  char *video_pos_data = encode_array(info, 4, pages + 1, 0, progress_cb);
   char *video_data = encode_array(info, 1, pages + 1, 1, progress_cb);
   char *annot_data = encode_array(info, 0, pages + 1, 1, progress_cb);
 
@@ -335,6 +361,9 @@ int main(int argc, char *argv[]) {
   template = replace_string_first(template, "{{presenter}}",
                                   options.presenter ? "true" : "false");
 
+  template = replace_string_first(template, "{{slide_data_type}}",
+                                  options.png ? "image/png" : "image/svg+xml");
+
   fwrite(template, strlen(template), 1, output);
   fclose(output);
 
@@ -349,8 +378,8 @@ int main(int argc, char *argv[]) {
   }
   free(template);
     
-  free(video_pos_data);
-  free(video_data);
+  // free(video_pos_data);
+  // free(video_data);
   free(thumb_data);
   free(slide_data);
   free(annot_data);

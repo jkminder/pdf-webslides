@@ -19,8 +19,9 @@ The first step is to convert a PDF to an HTML5 file. This is simply done by runn
 
     pdf-webslides <pdf file>
     
-The output is an `index.html` file and a corresponding `slides.js` in the current directory. Note that it is also possible to generate a standalone `index.html` using the `-s` option. If your HTLM file gets to large, consider varying the scale of resolution of the thumbnails (use `-t 0.2` and a float between 0.1 and 1.0, default is 0.6). If the HTML file is opened, it shows the slides in the same way as the original PDF. Slides can simply be navigated using left/right arrow keys, page-up/page-down keys, as well as by swiping over the slides. 
+The output is an `index.html` file and a corresponding `slides.js` in the current directory. Note that it is also possible to generate a standalone `index.html` using the `-s` option. If the HTML file is opened, it shows the slides in the same way as the original PDF. Slides can simply be navigated using left/right arrow keys, page-up/page-down keys, as well as by swiping over the slides. 
 
+**The HTML gets too large:** By default the script converts the slides to SVG images, which is a vector graphic and guarantees arbitrary resolution. But if you have a lot of small objects on your slides this might result in huge SVG files. If you prefer to rasterize the images instead, use the `--png` option. This will convert all slides to PNGs with default width 1920 pixels, which will reduce the file size but also fix the resolution. If you want to increase or decrease this resolution, additionally add the option `-w 3000` to modify the width of the slide image to e.g. 3000. With `-t 0.4` you can modify the relative resolution of the thumbnail slides (on the sidebar). A thumbnail size of 0.4 means that they have 40% of the resolution of the full slides.   
 
 ### Keyboard Shortcuts
 

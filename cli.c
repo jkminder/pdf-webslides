@@ -70,7 +70,7 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
   struct option *long_options =
       getopt_get_long_options((getopt_arg_t *)cli_options);
   int c, ret = 0;
-  while ((c = getopt_long(argc, argv, ":spo:nhvc:t:", long_options, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, ":so:nhvc:t:w:p", long_options, NULL)) != EOF) {
     switch (c) {
       case 's':
         options->single = 1;
@@ -78,9 +78,6 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
       case 'h':
         show_usage(argv[0], cli_options);
         ret = 1;
-        break;
-      case 'p':
-        options->presenter = 1;
         break;
       case 'o':
         options->name = strdup(optarg);
@@ -94,6 +91,16 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
         break;
       case 'c':
         options->compress = strdup(optarg);
+        break;
+      case 'p':
+        options->png = 1;
+        break;
+      case 'w':
+        options->slide_width = atoi(optarg);
+        if (options->slide_width < 1) {
+          printf("Width must be greater than 0\n");
+          ret = 1;
+        }
         break;
       case 't':
         options->thumbnail_scale = atof(optarg);
@@ -125,6 +132,11 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
         ret = 1;
         break;
     }
+  }
+
+  if (options->png && options->compress) {
+    printf("Cannot use -g and -c at the same time. Use -w to set the width of the PNG.\n");
+    ret = 1;
   }
 
   free(long_options);
