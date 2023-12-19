@@ -154,6 +154,7 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info, Options *opti
           sprintf(bbox_buffer, "%f;%f;%f;%f", llx, lly, urx, ury);
           append_elem(&info->videos_pos, bbox_buffer, "|");
 
+
           free(movie_filename);
           free(bbox_buffer);
           poppler_rectangle_free(rectangle);
@@ -378,8 +379,8 @@ int main(int argc, char *argv[]) {
   }
   free(template);
     
-  // free(video_pos_data);
-  // free(video_data);
+  free(video_pos_data);
+  free(video_data);
   free(thumb_data);
   free(slide_data);
   free(annot_data);

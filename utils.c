@@ -91,26 +91,53 @@ char *encode_array_base64(char *array, size_t len) {
 }
 
 // ---------------------------------------------------------------------------
-char *replace_string_first(char *input, char *search, char *replace) {
-  size_t search_len = strlen(search);
-  size_t input_len = strlen(input);
-  size_t replace_len = strlen(replace);
-  char *nbuff = malloc(input_len - search_len + replace_len + 1);
-  size_t i, out = 0;
-  for (i = 0; i < input_len; i++) {
-    if (i < input_len - search_len &&
-        strncmp(input + i, search, search_len) == 0) {
-      for (size_t j = 0; j < replace_len; j++) {
-        nbuff[out++] = replace[j];
-      }
-      i += search_len - 1;
-    } else {
-      nbuff[out++] = input[i];
+
+char *replace_string_first(char *orig, char *rep, char *with) {
+    // copied from here https://stackoverflow.com/questions/779875/what-function-is-to-replace-a-substring-from-a-string-in-c
+
+    char *result; // the return string
+    char *ins;    // the next insert point
+    char *tmp;    // varies
+    int len_rep;  // length of rep (the string to remove)
+    int len_with; // length of with (the string to replace rep with)
+    int len_front; // distance between rep and end of last rep
+    int count;    // number of replacements
+
+    // sanity checks and initialization
+    if (!orig || !rep)
+        return NULL;
+    len_rep = strlen(rep);
+    if (len_rep == 0)
+        return NULL; // empty rep causes infinite loop during count
+    if (!with)
+        with = "";
+    len_with = strlen(with);
+
+    // count the number of replacements needed
+    ins = orig;
+    for (count = 0; tmp = strstr(ins, rep); ++count) {
+        ins = tmp + len_rep;
     }
-  }
-  nbuff[out] = 0;
-  free(input);
-  return nbuff;
+
+    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+        return NULL;
+
+    // first time through the loop, all the variable are set correctly
+    // from here on,
+    //    tmp points to the end of the result string
+    //    ins points to the next occurrence of rep in orig
+    //    orig points to the remainder of orig after "end of rep"
+    while (count--) {
+        ins = strstr(orig, rep);
+        len_front = ins - orig;
+        tmp = strncpy(tmp, orig, len_front) + len_front;
+        tmp = strcpy(tmp, with) + len_with;
+        orig += len_front + len_rep; // move to next "end of rep"
+    }
+    strcpy(tmp, orig);
+    return result;
 }
 
 // ---------------------------------------------------------------------------
